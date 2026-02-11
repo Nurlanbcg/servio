@@ -108,7 +108,7 @@ const LoginPage: React.FC = () => {
                 </div>
 
                 <p className="text-center text-surface-500 text-xs mt-6">
-                    RestaurantOS — Ordering Management System
+                    Servio — Ordering Management System
                 </p>
             </div>
         </div>
