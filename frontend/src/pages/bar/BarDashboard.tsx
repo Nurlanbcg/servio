@@ -98,7 +98,7 @@ const BarDashboard: React.FC = () => {
     return (
         <Layout title="Bar Display">
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                         <h2 className="text-2xl font-bold text-surface-100">Bar Orders</h2>
                         <p className="text-surface-400 text-sm">{orders.length} order(s) pending</p>

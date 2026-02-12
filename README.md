@@ -1,4 +1,4 @@
-# RestaurantOS — Restaurant Ordering System
+# Servio — Restaurant Ordering System
 
 A production-ready restaurant ordering system with **4 role-based modules**: Waiter, Kitchen, Cashier, and Admin Panel. Features real-time order updates via Socket.IO, JWT authentication, and strict role-based access control.
 

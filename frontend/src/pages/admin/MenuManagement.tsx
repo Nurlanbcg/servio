@@ -451,62 +451,105 @@ const MenuManagement: React.FC = () => {
                         <p className="text-surface-400">No menu items yet. Add your first item above.</p>
                     </div>
                 ) : (
-                    <div className="card overflow-x-auto p-0">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-surface-700/50 text-surface-400">
-                                    <th className="text-left p-4 font-medium">Name</th>
-                                    <th className="text-left p-4 font-medium">Category</th>
-                                    <th className="text-right p-4 font-medium">Price</th>
-                                    <th className="text-left p-4 font-medium">Ingredients</th>
-                                    <th className="text-center p-4 font-medium">Status</th>
-                                    <th className="text-right p-4 font-medium">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {items.map((item) => (
-                                    <tr key={item._id} className="border-b border-surface-700/30 hover:bg-surface-800/30 transition">
-                                        <td className="p-4 font-medium text-surface-100">{item.name}</td>
-                                        <td className="p-4 text-surface-300">{item.category.toUpperCase()}</td>
-                                        <td className="p-4 text-right text-surface-200">${(item.price ?? 0).toFixed(2)}</td>
-                                        <td className="p-4 text-surface-300 text-xs max-w-xs">
-                                            <div className="flex flex-wrap gap-1">
-                                                {(item.ingredients || []).length > 0 ?
-                                                    (item.ingredients || []).map((ing, idx) => {
-                                                        const inv = ing.inventoryItem as InventoryItem;
-                                                        return (
-                                                            <span key={idx} className="badge bg-surface-700/50 text-surface-300 text-xs">
-                                                                {inv?.name || '?'} ×{ing.qty}
-                                                            </span>
-                                                        );
-                                                    })
-                                                    : <span className="text-surface-500">—</span>
-                                                }
-                                            </div>
-                                        </td>
-                                        <td className="p-4 text-center">
+                    <>
+                        {/* Mobile card view */}
+                        <div className="md:hidden space-y-3">
+                            {items.map((item) => (
+                                <div key={item._id} className="card space-y-3 animate-slide-up">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h3 className="font-semibold text-surface-100">{item.name}</h3>
+                                            <p className="text-xs text-surface-400 mt-0.5">{item.category.toUpperCase()}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg font-bold text-surface-100">${(item.price ?? 0).toFixed(2)}</span>
                                             <span className={item.isActive ? 'badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'badge bg-red-500/20 text-red-400 border border-red-500/30'}>
                                                 {item.isActive ? 'Active' : 'Inactive'}
                                             </span>
-                                        </td>
-                                        <td className="p-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button onClick={() => handleEdit(item)} className="btn-ghost btn-sm">
-                                                    <HiOutlinePencil className="w-4 h-4" />
-                                                </button>
-                                                <button onClick={() => handleDelete(item._id)} className="btn-ghost btn-sm text-red-400 hover:text-red-300">
-                                                    <HiOutlineTrash className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
+                                        </div>
+                                    </div>
+                                    {(item.ingredients || []).length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                            {item.ingredients.map((ing, idx) => {
+                                                const inv = ing.inventoryItem as InventoryItem;
+                                                return (
+                                                    <span key={idx} className="badge bg-surface-700/50 text-surface-300 text-xs">
+                                                        {inv?.name || '?'} ×{ing.qty}
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-2 pt-1 border-t border-surface-700/30">
+                                        <button onClick={() => handleEdit(item)} className="btn-ghost btn-sm flex-1">
+                                            <HiOutlinePencil className="w-4 h-4" /> Edit
+                                        </button>
+                                        <button onClick={() => handleDelete(item._id)} className="btn-ghost btn-sm flex-1 text-red-400 hover:text-red-300">
+                                            <HiOutlineTrash className="w-4 h-4" /> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop table view */}
+                        <div className="card overflow-x-auto p-0 hidden md:block">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-surface-700/50 text-surface-400">
+                                        <th className="text-left p-4 font-medium">Name</th>
+                                        <th className="text-left p-4 font-medium">Category</th>
+                                        <th className="text-right p-4 font-medium">Price</th>
+                                        <th className="text-left p-4 font-medium">Ingredients</th>
+                                        <th className="text-center p-4 font-medium">Status</th>
+                                        <th className="text-right p-4 font-medium">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {items.map((item) => (
+                                        <tr key={item._id} className="border-b border-surface-700/30 hover:bg-surface-800/30 transition">
+                                            <td className="p-4 font-medium text-surface-100">{item.name}</td>
+                                            <td className="p-4 text-surface-300">{item.category.toUpperCase()}</td>
+                                            <td className="p-4 text-right text-surface-200">${(item.price ?? 0).toFixed(2)}</td>
+                                            <td className="p-4 text-surface-300 text-xs max-w-xs">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {(item.ingredients || []).length > 0 ?
+                                                        (item.ingredients || []).map((ing, idx) => {
+                                                            const inv = ing.inventoryItem as InventoryItem;
+                                                            return (
+                                                                <span key={idx} className="badge bg-surface-700/50 text-surface-300 text-xs">
+                                                                    {inv?.name || '?'} ×{ing.qty}
+                                                                </span>
+                                                            );
+                                                        })
+                                                        : <span className="text-surface-500">—</span>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <span className={item.isActive ? 'badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'badge bg-red-500/20 text-red-400 border border-red-500/30'}>
+                                                    {item.isActive ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                            <td className="p-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button onClick={() => handleEdit(item)} className="btn-ghost btn-sm">
+                                                        <HiOutlinePencil className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => handleDelete(item._id)} className="btn-ghost btn-sm text-red-400 hover:text-red-300">
+                                                        <HiOutlineTrash className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
                 )}
             </div>
-        </Layout>
+        </Layout >
     );
 };
 

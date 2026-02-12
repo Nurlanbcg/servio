@@ -1,5 +1,5 @@
 {
-  "name": "restaurant-backend",
+  "name": "servio-backend",
   "version": "1.0.0",
   "description": "Restaurant ordering system backend",
   "main": "dist/server.js",

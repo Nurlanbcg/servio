@@ -174,55 +174,96 @@ const UserManagement: React.FC = () => {
                         <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : (
-                    <div className="card overflow-x-auto p-0">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-surface-700/50 text-surface-400">
-                                    <th className="text-left p-4 font-medium">Username</th>
-                                    <th className="text-left p-4 font-medium">Role</th>
-                                    <th className="text-center p-4 font-medium">Status</th>
-                                    <th className="text-left p-4 font-medium">Created</th>
-                                    <th className="text-right p-4 font-medium">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {users.map((user) => (
-                                    <tr key={user._id} className="border-b border-surface-700/30 hover:bg-surface-800/30 transition">
-                                        <td className="p-4 font-medium text-surface-100">{user.username}</td>
-                                        <td className="p-4">
+                    <>
+                        {/* Mobile card view */}
+                        <div className="md:hidden space-y-3">
+                            {users.map((user) => (
+                                <div key={user._id} className="card space-y-3 animate-slide-up">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h3 className="font-semibold text-surface-100">{user.username}</h3>
+                                            <p className="text-xs text-surface-400 mt-0.5">{new Date(user.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
                                             <span className={roleBadge[user.role] || 'badge'}>{user.role}</span>
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            <button
-                                                onClick={() => toggleActive(user)}
-                                                disabled={user._id === currentUser?.id}
-                                                title={user._id === currentUser?.id ? 'You cannot deactivate your own account' : ''}
-                                                className={`badge transition-all ${user._id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${user.isActive
-                                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                                    : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                                    }`}
-                                            >
-                                                {user.isActive ? 'Active' : 'Inactive'}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-1 border-t border-surface-700/30">
+                                        <button
+                                            onClick={() => toggleActive(user)}
+                                            disabled={user._id === currentUser?.id}
+                                            className={`badge transition-all ${user._id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${user.isActive
+                                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                }`}
+                                        >
+                                            {user.isActive ? 'Active' : 'Inactive'}
+                                        </button>
+                                        <div className="flex-1" />
+                                        <button onClick={() => handleEdit(user)} className="btn-ghost btn-sm">
+                                            <HiOutlinePencil className="w-4 h-4" /> Edit
+                                        </button>
+                                        {user._id !== currentUser?.id && (
+                                            <button onClick={() => handleDelete(user._id)} className="btn-ghost btn-sm text-red-400 hover:text-red-300">
+                                                <HiOutlineTrash className="w-4 h-4" /> Delete
                                             </button>
-                                        </td>
-                                        <td className="p-4 text-surface-400">{new Date(user.createdAt).toLocaleDateString()}</td>
-                                        <td className="p-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button onClick={() => handleEdit(user)} className="btn-ghost btn-sm">
-                                                    <HiOutlinePencil className="w-4 h-4" />
-                                                </button>
-                                                {user._id !== currentUser?.id && (
-                                                    <button onClick={() => handleDelete(user._id)} className="btn-ghost btn-sm text-red-400 hover:text-red-300">
-                                                        <HiOutlineTrash className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop table view */}
+                        <div className="card overflow-x-auto p-0 hidden md:block">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-surface-700/50 text-surface-400">
+                                        <th className="text-left p-4 font-medium">Username</th>
+                                        <th className="text-left p-4 font-medium">Role</th>
+                                        <th className="text-center p-4 font-medium">Status</th>
+                                        <th className="text-left p-4 font-medium">Created</th>
+                                        <th className="text-right p-4 font-medium">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {users.map((user) => (
+                                        <tr key={user._id} className="border-b border-surface-700/30 hover:bg-surface-800/30 transition">
+                                            <td className="p-4 font-medium text-surface-100">{user.username}</td>
+                                            <td className="p-4">
+                                                <span className={roleBadge[user.role] || 'badge'}>{user.role}</span>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <button
+                                                    onClick={() => toggleActive(user)}
+                                                    disabled={user._id === currentUser?.id}
+                                                    title={user._id === currentUser?.id ? 'You cannot deactivate your own account' : ''}
+                                                    className={`badge transition-all ${user._id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${user.isActive
+                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                                                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                        }`}
+                                                >
+                                                    {user.isActive ? 'Active' : 'Inactive'}
+                                                </button>
+                                            </td>
+                                            <td className="p-4 text-surface-400">{new Date(user.createdAt).toLocaleDateString()}</td>
+                                            <td className="p-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button onClick={() => handleEdit(user)} className="btn-ghost btn-sm">
+                                                        <HiOutlinePencil className="w-4 h-4" />
+                                                    </button>
+                                                    {user._id !== currentUser?.id && (
+                                                        <button onClick={() => handleDelete(user._id)} className="btn-ghost btn-sm text-red-400 hover:text-red-300">
+                                                            <HiOutlineTrash className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
                 )}
             </div>
         </Layout>

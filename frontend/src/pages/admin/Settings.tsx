@@ -246,7 +246,7 @@ const Settings: React.FC = () => {
                     </p>
 
                     {/* Add new hall/cabinet */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             onClick={() => setNewHallType(newHallType === 'hall' ? 'cabinet' : 'hall')}
                             className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all whitespace-nowrap ${newHallType === 'cabinet'
@@ -265,7 +265,7 @@ const Settings: React.FC = () => {
                         />
                         {newHallType === 'hall' && (
                             <input
-                                className="input w-48"
+                                className="input w-full sm:w-48"
                                 value={newHallTables}
                                 onChange={(e) => setNewHallTables(e.target.value)}
                                 placeholder="Tables: 1-10"
@@ -283,10 +283,10 @@ const Settings: React.FC = () => {
                         {halls.map((hall, index) => (
                             <div
                                 key={index}
-                                className="flex items-center justify-between py-3 px-4 rounded-xl bg-surface-800/30 border border-surface-700/50 group"
+                                className="flex flex-wrap items-center justify-between gap-2 py-3 px-4 rounded-xl bg-surface-800/30 border border-surface-700/50 group"
                             >
                                 {editingHallIndex === index ? (
-                                    <div className="flex items-center gap-2 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2 flex-1">
                                         <button
                                             onClick={() => setEditHallType(editHallType === 'hall' ? 'cabinet' : 'hall')}
                                             className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all whitespace-nowrap ${editHallType === 'cabinet'
@@ -306,7 +306,7 @@ const Settings: React.FC = () => {
                                         />
                                         {editHallType === 'hall' && (
                                             <input
-                                                className="input w-48 py-1.5"
+                                                className="input w-full sm:w-48 py-1.5"
                                                 value={editHallTables}
                                                 onChange={(e) => setEditHallTables(e.target.value)}
                                                 onKeyDown={(e) => e.key === 'Enter' && handleEditHall(hall.name)}
