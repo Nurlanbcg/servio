@@ -16,6 +16,15 @@ interface Order {
     createdAt: string;
 }
 
+interface GroupedOrder {
+    tableNumber: string;
+    items: OrderItem[];
+    status: string;
+    latestTime: string;
+    orderCount: number;
+    orderIds: string[];
+}
+
 interface Hall {
     name: string;
     tables: number[];
@@ -74,6 +83,56 @@ const WaiterOrders: React.FC = () => {
     // Get orders for active tab
     const filteredOrders = orders.filter(order => getOrderHall(order) === activeTab);
 
+    // Group confirmed orders by table, keep paid orders separate
+    const groupedOrders: GroupedOrder[] = (() => {
+        const confirmedMap = new Map<string, GroupedOrder>();
+        const result: GroupedOrder[] = [];
+
+        for (const order of filteredOrders) {
+            if (order.status === 'confirmed') {
+                const existing = confirmedMap.get(order.tableNumber);
+                if (existing) {
+                    // Merge items
+                    for (const item of order.items) {
+                        const existingItem = existing.items.find(i => i.name === item.name);
+                        if (existingItem) {
+                            existingItem.quantity += item.quantity;
+                        } else {
+                            existing.items.push({ ...item });
+                        }
+                    }
+                    existing.orderCount++;
+                    existing.orderIds.push(order._id);
+                    if (order.createdAt > existing.latestTime) {
+                        existing.latestTime = order.createdAt;
+                    }
+                } else {
+                    const grouped: GroupedOrder = {
+                        tableNumber: order.tableNumber,
+                        items: order.items.map(i => ({ ...i })),
+                        status: 'confirmed',
+                        latestTime: order.createdAt,
+                        orderCount: 1,
+                        orderIds: [order._id],
+                    };
+                    confirmedMap.set(order.tableNumber, grouped);
+                }
+            } else {
+                result.push({
+                    tableNumber: order.tableNumber,
+                    items: order.items.map(i => ({ ...i })),
+                    status: order.status,
+                    latestTime: order.createdAt,
+                    orderCount: 1,
+                    orderIds: [order._id],
+                });
+            }
+        }
+
+        // Add confirmed groups first, then paid
+        return [...confirmedMap.values(), ...result];
+    })();
+
     // Check which tab is a cabinet
     const isActiveCabinet = halls.find(h => h.name === activeTab)?.type === 'cabinet';
 
@@ -84,9 +143,11 @@ const WaiterOrders: React.FC = () => {
         return 0;
     });
 
-    // Count orders per hall/cabinet
+    // Count unique tables with orders per hall/cabinet
     const getOrderCount = (hallName: string): number => {
-        return orders.filter(order => getOrderHall(order) === hallName).length;
+        const hallOrders = orders.filter(order => getOrderHall(order) === hallName);
+        const tables = new Set(hallOrders.map(o => o.tableNumber));
+        return tables.size;
     };
 
     return (
@@ -142,36 +203,43 @@ const WaiterOrders: React.FC = () => {
                     <div className="flex items-center justify-center py-20">
                         <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                     </div>
-                ) : filteredOrders.length === 0 ? (
+                ) : groupedOrders.length === 0 ? (
                     <div className="card text-center py-12">
                         <p className="text-surface-400">No orders for {activeTab}</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {filteredOrders.map((order) => (
-                            <div key={order._id} className="card animate-slide-up space-y-3">
+                        {groupedOrders.map((group) => (
+                            <div key={group.orderIds.join('-')} className="card animate-slide-up space-y-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         {isActiveCabinet ? (
                                             <span className="text-lg font-bold text-purple-400">
-                                                🚪 {order.tableNumber}
+                                                🚪 {group.tableNumber}
                                             </span>
                                         ) : (
                                             <>
                                                 <span className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center font-bold text-lg shadow-lg shadow-brand-500/30">
-                                                    {order.tableNumber}
+                                                    {group.tableNumber}
                                                 </span>
                                                 <span className="text-xs text-surface-500">Table</span>
                                             </>
                                         )}
                                     </div>
-                                    <span className={order.status === 'paid' ? 'badge-paid' : 'badge-confirmed'}>
-                                        {order.status}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        {group.orderCount > 1 && (
+                                            <span className="text-xs text-surface-500 bg-surface-800 px-2 py-0.5 rounded-md">
+                                                {group.orderCount} orders
+                                            </span>
+                                        )}
+                                        <span className={group.status === 'paid' ? 'badge-paid' : 'badge-confirmed'}>
+                                            {group.status}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div className="space-y-1">
-                                    {order.items.map((item, idx) => (
+                                    {group.items.map((item, idx) => (
                                         <div key={idx} className="flex justify-between text-sm">
                                             <span className="text-surface-300">{item.name}</span>
                                             <span className="text-surface-400">×{item.quantity}</span>
@@ -180,7 +248,7 @@ const WaiterOrders: React.FC = () => {
                                 </div>
 
                                 <div className="text-xs text-surface-500">
-                                    {new Date(order.createdAt).toLocaleString()}
+                                    {new Date(group.latestTime).toLocaleString()}
                                 </div>
                             </div>
                         ))}
