@@ -114,7 +114,7 @@ const Reports: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <span className="text-lg font-bold text-surface-100">${order.totalPrice.toFixed(2)}</span>
+                                                <span className="text-lg font-bold text-surface-100">{order.totalPrice.toFixed(2)} AZN</span>
                                                 <div><span className={order.status === 'paid' ? 'badge-paid' : 'badge-confirmed'}>{order.status}</span></div>
                                             </div>
                                         </div>
@@ -148,7 +148,7 @@ const Reports: React.FC = () => {
                                                 <td className="p-4 text-surface-200">
                                                     {order.items.map((i) => `${i.name} ×${i.quantity}`).join(', ')}
                                                 </td>
-                                                <td className="p-4 text-right font-medium text-surface-100">${order.totalPrice.toFixed(2)}</td>
+                                                <td className="p-4 text-right font-medium text-surface-100">{order.totalPrice.toFixed(2)} AZN</td>
                                                 <td className="p-4 text-center">
                                                     <span className={order.status === 'paid' ? 'badge-paid' : 'badge-confirmed'}>
                                                         {order.status}

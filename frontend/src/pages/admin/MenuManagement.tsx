@@ -462,7 +462,7 @@ const MenuManagement: React.FC = () => {
                                             <p className="text-xs text-surface-400 mt-0.5">{item.category.toUpperCase()}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-lg font-bold text-surface-100">${(item.price ?? 0).toFixed(2)}</span>
+                                            <span className="text-lg font-bold text-surface-100">{(item.price ?? 0).toFixed(2)} AZN</span>
                                             <span className={item.isActive ? 'badge bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'badge bg-red-500/20 text-red-400 border border-red-500/30'}>
                                                 {item.isActive ? 'Active' : 'Inactive'}
                                             </span>
@@ -510,7 +510,7 @@ const MenuManagement: React.FC = () => {
                                         <tr key={item._id} className="border-b border-surface-700/30 hover:bg-surface-800/30 transition">
                                             <td className="p-4 font-medium text-surface-100">{item.name}</td>
                                             <td className="p-4 text-surface-300">{item.category.toUpperCase()}</td>
-                                            <td className="p-4 text-right text-surface-200">${(item.price ?? 0).toFixed(2)}</td>
+                                            <td className="p-4 text-right text-surface-200">{(item.price ?? 0).toFixed(2)} AZN</td>
                                             <td className="p-4 text-surface-300 text-xs max-w-xs">
                                                 <div className="flex flex-wrap gap-1">
                                                     {(item.ingredients || []).length > 0 ?
