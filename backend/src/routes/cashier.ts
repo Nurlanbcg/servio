@@ -47,6 +47,17 @@ router.patch('/orders/:id/pay', async (req: AuthRequest, res: Response): Promise
             status: order.status,
         });
 
+        // If order was just paid, check if all orders for this table are paid
+        if (order.status === 'paid') {
+            const remainingConfirmed = await Order.countDocuments({
+                tableNumber: order.tableNumber,
+                status: 'confirmed',
+            });
+            if (remainingConfirmed === 0) {
+                io.to('waiter').emit('table-freed', { tableNumber: order.tableNumber });
+            }
+        }
+
         res.json({
             _id: order._id,
             tableNumber: order.tableNumber,

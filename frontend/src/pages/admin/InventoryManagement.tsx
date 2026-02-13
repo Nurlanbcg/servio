@@ -3,7 +3,7 @@ import Layout from '../../components/Layout';
 import api from '../../lib/api';
 import { getSocket } from '../../lib/socket';
 import toast from 'react-hot-toast';
-import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineCheck, HiOutlineX } from 'react-icons/hi';
+import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineCheck, HiOutlineX, HiOutlineSearch } from 'react-icons/hi';
 
 interface InventoryItem {
     _id: string;
@@ -29,6 +29,7 @@ const InventoryManagement: React.FC = () => {
     const [editForm, setEditForm] = useState({ name: '', stock: '', unit: '' });
     const [showAddForm, setShowAddForm] = useState(false);
     const [addForm, setAddForm] = useState({ name: '', stock: '', unit: 'ədəd' });
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchInventory();
@@ -127,14 +128,38 @@ const InventoryManagement: React.FC = () => {
     return (
         <Layout title="Admin Panel" navItems={adminNav}>
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-surface-100">Inventory Management</h2>
-                    <button
-                        onClick={() => setShowAddForm(!showAddForm)}
-                        className={showAddForm ? 'btn-secondary' : 'btn-primary'}
-                    >
-                        {showAddForm ? <><HiOutlineX className="w-4 h-4" /> Cancel</> : <><HiOutlinePlus className="w-4 h-4" /> Add Item</>}
-                    </button>
+                <div className="sticky top-16 z-10 bg-surface-950 pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 space-y-3">
+                    <div className="flex items-center justify-between gap-3 pt-1">
+                        <h2 className="text-xl font-bold text-surface-100 flex-shrink-0">Inventory Management</h2>
+                        <div className="flex items-center gap-2 flex-1 justify-end">
+                            <div className="relative max-w-xs flex-1 hidden sm:block">
+                                <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by name..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="input w-full pl-9 py-2 text-sm"
+                                />
+                            </div>
+                            <button
+                                onClick={() => setShowAddForm(!showAddForm)}
+                                className={showAddForm ? 'btn-secondary flex-shrink-0' : 'btn-primary flex-shrink-0'}
+                            >
+                                {showAddForm ? <><HiOutlineX className="w-4 h-4" /> Cancel</> : <><HiOutlinePlus className="w-4 h-4" /> Add Item</>}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="relative sm:hidden">
+                        <HiOutlineSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by name..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="input w-full pl-9 py-2 text-sm"
+                        />
+                    </div>
                 </div>
 
                 {/* Add Form */}
@@ -185,59 +210,80 @@ const InventoryManagement: React.FC = () => {
                     </div>
                 )}
 
+                {/* Edit Modal */}
+                {editingId && (
+                    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm md:hidden" onClick={handleCancel}>
+                        <div className="bg-surface-800 border-t border-surface-700/50 rounded-t-2xl animate-slide-up w-full max-w-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                            <div className="sticky top-0 bg-surface-800 rounded-t-2xl px-6 pt-4 pb-3 z-10">
+                                <div className="flex justify-center mb-3"><div className="w-10 h-1 rounded-full bg-surface-600" /></div>
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-lg font-semibold text-surface-100">Edit Inventory Item</h3>
+                                    <button onClick={handleCancel} className="btn-ghost btn-sm">
+                                        <HiOutlineX className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="space-y-4 overflow-y-auto px-6 py-2 flex-1">
+                                <div>
+                                    <label className="label">Name</label>
+                                    <input className="input w-full" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Name" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="label">Stock</label>
+                                        <input className="input w-full" type="number" min="0" step="0.1" value={editForm.stock} onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })} placeholder="Stock" />
+                                    </div>
+                                    <div>
+                                        <label className="label">Unit</label>
+                                        <select className="input w-full" value={editForm.unit} onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}>
+                                            <option value="ədəd">ədəd</option>
+                                            <option value="kq">kq</option>
+                                            <option value="litr">litr</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="sticky bottom-0 bg-surface-800 px-6 py-4 border-t border-surface-700/50 flex items-center gap-2">
+                                <button onClick={() => handleSave(editingId)} className="btn-primary flex-1">
+                                    <HiOutlineCheck className="w-4 h-4" /> Save
+                                </button>
+                                <button onClick={handleCancel} className="btn-secondary flex-1">
+                                    <HiOutlineX className="w-4 h-4" /> Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
                         <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
                     </div>
-                ) : inventory.length === 0 ? (
+                ) : inventory.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
                     <div className="card text-center py-12">
-                        <p className="text-surface-400">No inventory items yet. Add your first item above.</p>
+                        <p className="text-surface-400">{searchQuery ? 'No items match your search.' : 'No inventory items yet. Add your first item above.'}</p>
                     </div>
                 ) : (
                     <>
                         {/* Mobile card view */}
                         <div className="md:hidden space-y-3">
-                            {inventory.map((item) => (
+                            {inventory.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase())).map((item) => (
                                 <div key={item._id} className="card space-y-3 animate-slide-up">
-                                    {editingId === item._id ? (
-                                        <div className="space-y-3">
-                                            <input className="input w-full" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Name" />
-                                            <div className="flex gap-2">
-                                                <input className="input flex-1" type="number" min="0" step="0.1" value={editForm.stock} onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })} placeholder="Stock" />
-                                                <select className="input w-28" value={editForm.unit} onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}>
-                                                    <option value="ədəd">ədəd</option>
-                                                    <option value="kq">kq</option>
-                                                    <option value="litr">litr</option>
-                                                </select>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <button onClick={() => handleSave(item._id)} className="btn-primary btn-sm flex-1">
-                                                    <HiOutlineCheck className="w-4 h-4" /> Save
-                                                </button>
-                                                <button onClick={handleCancel} className="btn-ghost btn-sm flex-1">
-                                                    <HiOutlineX className="w-4 h-4" /> Cancel
-                                                </button>
-                                            </div>
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h3 className="font-semibold text-surface-100">{item.name}</h3>
+                                            <p className="text-sm text-surface-400">{item.stock} {item.unit}</p>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <h3 className="font-semibold text-surface-100">{item.name}</h3>
-                                                    <p className="text-sm text-surface-400">{item.stock} {item.unit}</p>
-                                                </div>
-                                                <span className={getStockBadge(item.stock)}>{getStockLabel(item.stock)}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 pt-1 border-t border-surface-700/30">
-                                                <button onClick={() => handleEdit(item)} className="btn-ghost btn-sm flex-1">
-                                                    <HiOutlinePencil className="w-4 h-4" /> Edit
-                                                </button>
-                                                <button onClick={() => handleDelete(item._id)} className="btn-ghost btn-sm flex-1 text-red-400 hover:text-red-300">
-                                                    <HiOutlineTrash className="w-4 h-4" /> Delete
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
+                                        <span className={getStockBadge(item.stock)}>{getStockLabel(item.stock)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-1 border-t border-surface-700/30">
+                                        <button onClick={() => handleEdit(item)} className="btn-ghost btn-sm flex-1">
+                                            <HiOutlinePencil className="w-4 h-4" /> Edit
+                                        </button>
+                                        <button onClick={() => handleDelete(item._id)} className="btn-ghost btn-sm flex-1 text-red-400 hover:text-red-300">
+                                            <HiOutlineTrash className="w-4 h-4" /> Delete
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -255,40 +301,25 @@ const InventoryManagement: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {inventory.map((item) => (
+                                    {inventory.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase())).map((item) => (
                                         <tr key={item._id} className="border-b border-surface-700/30 hover:bg-surface-800/30 transition">
                                             <td className="p-4">
                                                 {editingId === item._id ? (
-                                                    <input
-                                                        className="input w-full"
-                                                        value={editForm.name}
-                                                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                                    />
+                                                    <input className="input w-full" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
                                                 ) : (
                                                     <span className="font-medium text-surface-100">{item.name}</span>
                                                 )}
                                             </td>
                                             <td className="p-4 text-right">
                                                 {editingId === item._id ? (
-                                                    <input
-                                                        className="input w-24 text-right"
-                                                        type="number"
-                                                        min="0"
-                                                        step="0.1"
-                                                        value={editForm.stock}
-                                                        onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })}
-                                                    />
+                                                    <input className="input w-24 text-right" type="number" min="0" step="0.1" value={editForm.stock} onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })} />
                                                 ) : (
                                                     <span className="text-surface-200">{item.stock}</span>
                                                 )}
                                             </td>
                                             <td className="p-4">
                                                 {editingId === item._id ? (
-                                                    <select
-                                                        className="input w-28"
-                                                        value={editForm.unit}
-                                                        onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
-                                                    >
+                                                    <select className="input w-28" value={editForm.unit} onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}>
                                                         <option value="ədəd">ədəd</option>
                                                         <option value="kq">kq</option>
                                                         <option value="litr">litr</option>

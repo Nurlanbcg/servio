@@ -40,7 +40,7 @@ interface GroupedOrder {
 const CashierDashboard: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState<'all' | 'confirmed' | 'paid'>('all');
+    const [filter, setFilter] = useState<'all' | 'confirmed' | 'paid'>('confirmed');
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
     const [halls, setHalls] = useState<Hall[]>([]);
     const [activeTab, setActiveTab] = useState<string>('all');

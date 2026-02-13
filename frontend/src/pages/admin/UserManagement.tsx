@@ -182,7 +182,7 @@ const UserManagement: React.FC = () => {
                                     <div className="flex items-start justify-between">
                                         <div>
                                             <h3 className="font-semibold text-surface-100">{user.username}</h3>
-                                            <p className="text-xs text-surface-400 mt-0.5">{new Date(user.createdAt).toLocaleDateString()}</p>
+                                            <p className="text-xs text-surface-400 mt-0.5">{new Date(user.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className={roleBadge[user.role] || 'badge'}>{user.role}</span>
@@ -245,7 +245,7 @@ const UserManagement: React.FC = () => {
                                                     {user.isActive ? 'Active' : 'Inactive'}
                                                 </button>
                                             </td>
-                                            <td className="p-4 text-surface-400">{new Date(user.createdAt).toLocaleDateString()}</td>
+                                            <td className="p-4 text-surface-400">{new Date(user.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
                                             <td className="p-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <button onClick={() => handleEdit(user)} className="btn-ghost btn-sm">

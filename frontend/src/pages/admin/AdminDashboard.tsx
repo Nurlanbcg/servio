@@ -30,21 +30,21 @@ const AdminDashboard: React.FC = () => {
                     <p className="text-surface-400">Manage your restaurant from here</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-4 sm:gap-6">
                     {sections.map((s) => (
                         <Link
                             key={s.path}
                             to={s.path}
-                            className={`card bg-gradient-to-br ${s.color} hover:scale-[1.02] transition-transform group`}
+                            className={`card bg-gradient-to-br ${s.color} hover:scale-[1.02] transition-all group overflow-hidden
+                                flex flex-col items-center justify-center text-center p-4 aspect-square
+                                sm:flex-row sm:items-start sm:justify-start sm:text-left sm:p-6 sm:aspect-auto sm:gap-4`}
                         >
-                            <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 rounded-xl bg-surface-800/50 flex items-center justify-center">
-                                    <s.icon className="w-6 h-6 text-surface-200 group-hover:text-brand-400 transition-colors" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-surface-100">{s.label}</h3>
-                                    <p className="text-sm text-surface-400">{s.desc}</p>
-                                </div>
+                            <div className="w-14 h-14 sm:w-12 sm:h-12 rounded-2xl sm:rounded-xl bg-surface-800/50 flex items-center justify-center mb-3 sm:mb-0 flex-shrink-0">
+                                <s.icon className="w-7 h-7 sm:w-6 sm:h-6 text-surface-200 group-hover:text-brand-400 transition-colors" />
+                            </div>
+                            <div>
+                                <h3 className="text-base sm:text-lg font-bold text-surface-100 mb-0.5">{s.label}</h3>
+                                <p className="text-xs sm:text-sm text-surface-400">{s.desc}</p>
                             </div>
                         </Link>
                     ))}

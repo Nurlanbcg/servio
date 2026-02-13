@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
 import api from '../../lib/api';
+import { getSocket } from '../../lib/socket';
 import toast from 'react-hot-toast';
 import { HiOutlinePlus, HiOutlineMinus, HiOutlineShoppingCart, HiOutlineCheck, HiOutlineArrowLeft, HiOutlineX, HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi';
 
@@ -39,6 +40,16 @@ const WaiterDashboard: React.FC = () => {
         fetchMenu();
         fetchSettings();
         fetchBusyTables();
+
+        const socket = getSocket();
+        socket.on('table-freed', (data: { tableNumber: string }) => {
+            setBusyTables((prev) => {
+                const next = new Set(prev);
+                next.delete(String(data.tableNumber));
+                return next;
+            });
+        });
+        return () => { socket.off('table-freed'); };
     }, []);
 
     const fetchBusyTables = async () => {

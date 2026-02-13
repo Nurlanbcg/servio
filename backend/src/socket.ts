@@ -49,6 +49,8 @@ export const initSocket = (httpServer: HttpServer): Server => {
             socket.join('bar');
         } else if (user.role === 'cashier') {
             socket.join('cashier');
+        } else if (user.role === 'waiter') {
+            socket.join('waiter');
         } else if (user.role === 'admin') {
             socket.join('admin');
         }

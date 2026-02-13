@@ -109,7 +109,7 @@ const Reports: React.FC = () => {
                                             <div className="flex items-center gap-2">
                                                 <span className="w-8 h-8 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold text-sm">{order.tableNumber}</span>
                                                 <div>
-                                                    <p className="text-xs text-surface-400">{new Date(order.createdAt).toLocaleString()}</p>
+                                                    <p className="text-xs text-surface-400">{new Date(order.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</p>
                                                     <p className="text-xs text-surface-500">{order.createdBy?.username || '-'}</p>
                                                 </div>
                                             </div>
@@ -142,7 +142,7 @@ const Reports: React.FC = () => {
                                         {orders.map((order) => (
                                             <tr key={order._id} className="border-b border-surface-700/30 hover:bg-surface-800/30 transition">
                                                 <td className="p-4 text-surface-300 whitespace-nowrap">
-                                                    {new Date(order.createdAt).toLocaleString()}
+                                                    {new Date(order.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
                                                 </td>
                                                 <td className="p-4 text-center font-bold text-brand-400">{order.tableNumber}</td>
                                                 <td className="p-4 text-surface-200">
@@ -175,7 +175,7 @@ const Reports: React.FC = () => {
                                     <div className="flex items-start justify-between">
                                         <div>
                                             <h3 className="font-semibold text-surface-100">{log.inventoryItemName}</h3>
-                                            <p className="text-xs text-surface-400">{new Date(log.createdAt).toLocaleString()}</p>
+                                            <p className="text-xs text-surface-400">{new Date(log.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</p>
                                         </div>
                                         <span className="w-8 h-8 rounded-lg bg-brand-500/20 text-brand-400 flex items-center justify-center font-bold text-sm">{log.tableNumber}</span>
                                     </div>
@@ -204,7 +204,7 @@ const Reports: React.FC = () => {
                                     {logs.map((log) => (
                                         <tr key={log._id} className="border-b border-surface-700/30 hover:bg-surface-800/30 transition">
                                             <td className="p-4 text-surface-300 whitespace-nowrap">
-                                                {new Date(log.createdAt).toLocaleString()}
+                                                {new Date(log.createdAt).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
                                             </td>
                                             <td className="p-4 font-medium text-surface-100">{log.inventoryItemName}</td>
                                             <td className="p-4 text-center text-brand-400">{log.tableNumber}</td>

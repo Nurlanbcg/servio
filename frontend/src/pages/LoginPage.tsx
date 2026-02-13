@@ -52,7 +52,8 @@ const LoginPage: React.FC = () => {
                     <img
                         src="/servio.png"
                         alt="Servio"
-                        className="h-12 mx-auto mb-6 object-contain drop-shadow-lg"
+                        className="h-16 mx-auto mb-6 object-contain drop-shadow-lg select-none"
+                        draggable={false}
                     />
                     <p className="text-surface-400 mt-2">Sign in to your account</p>
                 </div>
