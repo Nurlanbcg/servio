@@ -12,7 +12,8 @@ router.use(authenticate, authorize('cashier'));
 router.get('/orders', async (_req: AuthRequest, res: Response): Promise<void> => {
     try {
         const orders = await Order.find()
-            .select('tableNumber items.name items.quantity items.price totalPrice status createdAt paidAt')
+            .select('tableNumber items.name items.quantity items.price totalPrice status createdAt paidAt createdBy checkPrinted')
+            .populate('createdBy', 'username')
             .sort({ createdAt: -1 });
 
         res.json(orders);
@@ -66,6 +67,24 @@ router.patch('/orders/:id/pay', async (req: AuthRequest, res: Response): Promise
             status: order.status,
             paidAt: order.paidAt,
         });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error.' });
+    }
+});
+
+// PATCH /api/cashier/orders/print-check — mark orders as check printed
+router.patch('/orders/print-check', async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { orderIds } = req.body;
+        if (!Array.isArray(orderIds) || orderIds.length === 0) {
+            res.status(400).json({ message: 'orderIds array is required.' });
+            return;
+        }
+        await Order.updateMany(
+            { _id: { $in: orderIds } },
+            { $set: { checkPrinted: true } }
+        );
+        res.json({ success: true });
     } catch (error) {
         res.status(500).json({ message: 'Server error.' });
     }

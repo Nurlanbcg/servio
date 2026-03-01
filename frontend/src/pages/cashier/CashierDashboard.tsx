@@ -3,7 +3,7 @@ import Layout from '../../components/Layout';
 import api from '../../lib/api';
 import { getSocket } from '../../lib/socket';
 import toast from 'react-hot-toast';
-import { HiOutlineCash, HiOutlineCheck, HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi';
+import { HiOutlineCash, HiOutlineCheck, HiOutlineViewGrid, HiOutlineViewList, HiOutlinePrinter } from 'react-icons/hi';
 
 interface OrderItem {
     name: string;
@@ -19,6 +19,8 @@ interface Order {
     status: string;
     createdAt: string;
     paidAt?: string;
+    createdBy?: { _id: string; username: string };
+    checkPrinted?: boolean;
 }
 
 interface Hall {
@@ -35,6 +37,8 @@ interface GroupedOrder {
     latestTime: string;
     orderCount: number;
     orderIds: string[];
+    waiterNames: string[];
+    checkPrinted: boolean;
 }
 
 const CashierDashboard: React.FC = () => {
@@ -44,6 +48,7 @@ const CashierDashboard: React.FC = () => {
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
     const [halls, setHalls] = useState<Hall[]>([]);
     const [activeTab, setActiveTab] = useState<string>('all');
+
 
     useEffect(() => {
         fetchOrders();
@@ -94,6 +99,72 @@ const CashierDashboard: React.FC = () => {
     const isCabinetOrder = (order: Order): boolean => {
         return halls.some(h => h.type === 'cabinet' && h.name === order.tableNumber);
     };
+    const handlePrintCheck = async (groupKey: string, group: GroupedOrder) => {
+        const isCabinet = halls.some(h => h.type === 'cabinet' && h.name === group.tableNumber);
+        const tableNum = parseInt(group.tableNumber);
+        const hall = !isCabinet && !isNaN(tableNum) ? halls.find(h => h.type !== 'cabinet' && h.tables.includes(tableNum)) : null;
+        const tableLabel = isCabinet ? group.tableNumber : hall ? `${hall.name} - Table #${group.tableNumber}` : `Table #${group.tableNumber}`;
+        const itemsHtml = group.items.map(item =>
+            `<tr><td>${item.name}</td><td style="text-align:center">${item.quantity}</td><td style="text-align:right">${(item.price * item.quantity).toFixed(2)}</td></tr>`
+        ).join('');
+        const waiterLabel = group.waiterNames.length > 0 ? group.waiterNames.join(', ') : '';
+        const receiptHtml = [
+            '<!DOCTYPE html><html><head><title>Check</title>',
+            '<style>',
+            '@page { size: 80mm auto; margin: 0 }',
+            '* { margin: 0; padding: 0; box-sizing: border-box }',
+            "body { font-family: 'Courier New', monospace; width: 72mm; min-height: 80mm; margin: 0 auto; padding: 5mm 4mm; font-size: 16px; line-height: 1.5 }",
+            '.pub { text-align: center; font-size: 22px; font-weight: bold; margin-bottom: 3mm; letter-spacing: 1px }',
+            'h3 { text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 2mm }',
+            '.info { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; padding-bottom: 2mm; margin-bottom: 3mm; border-bottom: 1px dashed #000 }',
+            'table { width: 100%; border-collapse: collapse; margin: 3mm 0 }',
+            'td { font-size: 16px; font-weight: bold; padding: 4px 0 }',
+            '.t { border-top: 2px dashed #000; font-weight: bold; font-size: 18px; padding-top: 3mm; margin-top: 3mm; text-align: right }',
+            '.f { text-align: center; margin-top: 4mm; font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; border-top: 1px dashed #000; padding-top: 3mm }',
+            '</style></head>',
+            '<body>',
+            '<div class="pub">Artıbir</div>',
+            `<h3>${tableLabel}</h3>`,
+            '<div class="info">',
+            waiterLabel ? `<span>Ofisiant: ${waiterLabel}</span>` : '<span></span>',
+            `<span>${new Date(group.latestTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>`,
+            '</div>',
+            `<table>${itemsHtml}</table>`,
+            `<div class="t">Total: ${group.totalPrice.toFixed(2)} AZN</div>`,
+            '<div class="f">Təşəkkürlər</div>',
+            '</body></html>',
+        ].join('');
+
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.top = '-10000px';
+        iframe.style.left = '-10000px';
+        iframe.style.width = '80mm';
+        iframe.style.height = '0';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (doc) {
+            doc.open();
+            doc.write(receiptHtml);
+            doc.close();
+            setTimeout(() => {
+                iframe.contentWindow?.print();
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 500);
+            }, 250);
+        }
+
+        try {
+            await api.patch('/cashier/orders/print-check', { orderIds: group.orderIds });
+            setOrders(prev => prev.map(o => group.orderIds.includes(o._id) ? { ...o, checkPrinted: true } : o));
+            toast.success('Check printed');
+        } catch {
+            toast.error('Failed to save print status');
+        }
+    };
+
     const togglePay = async (orderId: string) => {
         try {
             const { data } = await api.patch(`/cashier/orders/${orderId}/pay`);
@@ -158,6 +229,9 @@ const CashierDashboard: React.FC = () => {
                     existing.totalPrice += order.totalPrice;
                     existing.orderCount++;
                     existing.orderIds.push(order._id);
+                    if (order.createdBy?.username && !existing.waiterNames.includes(order.createdBy.username)) {
+                        existing.waiterNames.push(order.createdBy.username);
+                    }
                     if (order.createdAt > existing.latestTime) {
                         existing.latestTime = order.createdAt;
                     }
@@ -170,6 +244,8 @@ const CashierDashboard: React.FC = () => {
                         latestTime: order.createdAt,
                         orderCount: 1,
                         orderIds: [order._id],
+                        waiterNames: order.createdBy?.username ? [order.createdBy.username] : [],
+                        checkPrinted: !!order.checkPrinted,
                     });
                 }
             } else {
@@ -181,6 +257,8 @@ const CashierDashboard: React.FC = () => {
                     latestTime: order.createdAt,
                     orderCount: 1,
                     orderIds: [order._id],
+                    waiterNames: order.createdBy?.username ? [order.createdBy.username] : [],
+                    checkPrinted: !!order.checkPrinted,
                 });
             }
         }
@@ -334,24 +412,41 @@ const CashierDashboard: React.FC = () => {
 
                                 <div className="flex items-center justify-between pt-1 border-t border-surface-700/30 mb-2">
                                     <span className="text-xs text-surface-500">
-                                        {new Date(group.latestTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {new Date(group.latestTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                     </span>
                                     <span className="text-sm font-bold text-brand-400">{group.totalPrice.toFixed(2)} AZN</span>
                                 </div>
 
-                                <button
-                                    onClick={() => group.orderIds.length === 1 ? togglePay(group.orderIds[0]) : togglePayGroup(group.orderIds)}
-                                    className={`w-full py-1.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1 ${group.status === 'paid'
-                                        ? 'bg-surface-700 text-surface-300 hover:bg-surface-600'
-                                        : 'bg-emerald-500 text-white hover:bg-emerald-600'
-                                        }`}
-                                >
-                                    {group.status === 'paid' ? (
-                                        <><HiOutlineCash className="w-3.5 h-3.5" /> Unpaid</>
-                                    ) : (
-                                        <><HiOutlineCheck className="w-3.5 h-3.5" /> Paid</>
+                                <div className="flex gap-1.5">
+                                    {group.status !== 'paid' && (
+                                        <button
+                                            onClick={() => handlePrintCheck(group.orderIds.join('-'), group)}
+                                            className={`w-1/2 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1 ${group.checkPrinted
+                                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                                                }`}
+                                        >
+                                            <HiOutlinePrinter className="w-3.5 h-3.5" />
+                                            {group.checkPrinted ? 'Printed' : 'Print'}
+                                        </button>
                                     )}
-                                </button>
+                                    <button
+                                        onClick={() => group.orderIds.length === 1 ? togglePay(group.orderIds[0]) : togglePayGroup(group.orderIds)}
+                                        disabled={group.status !== 'paid' && !group.checkPrinted}
+                                        className={`${group.status === 'paid' ? 'w-full' : 'w-1/2'} py-1.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1 ${group.status === 'paid'
+                                            ? 'bg-surface-700 text-surface-300 hover:bg-surface-600'
+                                            : !group.checkPrinted
+                                                ? 'bg-emerald-500/30 text-emerald-300/50 cursor-not-allowed'
+                                                : 'bg-emerald-500 text-white hover:bg-emerald-600'
+                                            }`}
+                                    >
+                                        {group.status === 'paid' ? (
+                                            <><HiOutlineCash className="w-3.5 h-3.5" /> Unpaid</>
+                                        ) : (
+                                            <><HiOutlineCheck className="w-3.5 h-3.5" /> Paid</>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -375,7 +470,7 @@ const CashierDashboard: React.FC = () => {
                                                 )}
                                             </h3>
                                             <p className="text-xs text-surface-400">
-                                                {new Date(group.latestTime).toLocaleString()}
+                                                {new Date(group.latestTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                             </p>
                                         </div>
                                     </div>
@@ -422,22 +517,42 @@ const CashierDashboard: React.FC = () => {
                                     </table>
                                 </div>
 
-                                <button
-                                    onClick={() => group.orderIds.length === 1 ? togglePay(group.orderIds[0]) : togglePayGroup(group.orderIds)}
-                                    className={group.status === 'paid' ? 'btn-secondary w-full' : 'btn-success w-full'}
-                                >
-                                    {group.status === 'paid' ? (
-                                        <>
-                                            <HiOutlineCash className="w-4 h-4" />
-                                            Mark Unpaid
-                                        </>
-                                    ) : (
-                                        <>
-                                            <HiOutlineCheck className="w-4 h-4" />
-                                            Mark as Paid
-                                        </>
+                                <div className="flex gap-2">
+                                    {group.status !== 'paid' && (
+                                        <button
+                                            onClick={() => handlePrintCheck(group.orderIds.join('-'), group)}
+                                            className={`w-1/2 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${group.checkPrinted
+                                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                                : 'bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/25'
+                                                }`}
+                                        >
+                                            <HiOutlinePrinter className="w-4 h-4" />
+                                            {group.checkPrinted ? 'Printed ✓' : 'Print Check'}
+                                        </button>
                                     )}
-                                </button>
+                                    <button
+                                        onClick={() => group.orderIds.length === 1 ? togglePay(group.orderIds[0]) : togglePayGroup(group.orderIds)}
+                                        disabled={group.status !== 'paid' && !group.checkPrinted}
+                                        className={`${group.status === 'paid' ? 'w-full' : 'w-1/2'} py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${group.status === 'paid'
+                                            ? 'bg-surface-700 text-surface-300 hover:bg-surface-600'
+                                            : !group.checkPrinted
+                                                ? 'bg-emerald-500/30 text-emerald-300/50 cursor-not-allowed'
+                                                : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/25'
+                                            }`}
+                                    >
+                                        {group.status === 'paid' ? (
+                                            <>
+                                                <HiOutlineCash className="w-4 h-4" />
+                                                Mark Unpaid
+                                            </>
+                                        ) : (
+                                            <>
+                                                <HiOutlineCheck className="w-4 h-4" />
+                                                Mark as Paid
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>

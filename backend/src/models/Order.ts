@@ -18,6 +18,7 @@ export interface IOrder extends Document {
     status: OrderStatus;
     createdBy: mongoose.Types.ObjectId;
     paidAt?: Date;
+    checkPrinted: boolean;
 }
 
 const orderItemSchema = new Schema<IOrderItem>(
@@ -81,6 +82,10 @@ const orderSchema = new Schema<IOrder>(
         },
         paidAt: {
             type: Date,
+        },
+        checkPrinted: {
+            type: Boolean,
+            default: false,
         },
     },
     { timestamps: true }
