@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import LoginPage from './pages/LoginPage';
+import PinLoginPage from './pages/PinLoginPage';
 import WaiterDashboard from './pages/waiter/WaiterDashboard';
 import WaiterOrders from './pages/waiter/WaiterOrders';
 import KitchenDashboard from './pages/kitchen/KitchenDashboard';
@@ -32,7 +33,8 @@ function App() {
 
     return (
         <Routes>
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={<PinLoginPage />} />
+            <Route path="/login/admin" element={<LoginPage />} />
 
             {/* Waiter routes */}
             <Route path="/waiter" element={<ProtectedRoute allowedRoles={['waiter']}><WaiterDashboard /></ProtectedRoute>} />

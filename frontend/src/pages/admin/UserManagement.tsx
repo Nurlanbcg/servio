@@ -9,6 +9,7 @@ interface User {
     _id: string;
     username: string;
     role: string;
+    pin?: string;
     isActive: boolean;
     createdAt: string;
 }
@@ -28,7 +29,7 @@ const UserManagement: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [form, setForm] = useState({ username: '', password: '', role: 'waiter' });
+    const [form, setForm] = useState({ username: '', password: '', role: 'waiter', pin: '' });
 
     useEffect(() => {
         fetchUsers();
@@ -46,7 +47,7 @@ const UserManagement: React.FC = () => {
     };
 
     const resetForm = () => {
-        setForm({ username: '', password: '', role: 'waiter' });
+        setForm({ username: '', password: '', role: 'waiter', pin: '' });
         setEditingId(null);
         setShowForm(false);
     };
@@ -57,11 +58,15 @@ const UserManagement: React.FC = () => {
             if (editingId) {
                 const payload: any = { username: form.username, role: form.role };
                 if (form.password) payload.password = form.password;
+                if (form.role !== 'admin') payload.pin = form.pin || '';
                 const { data } = await api.put(`/admin/users/${editingId}`, payload);
                 setUsers((prev) => prev.map((u) => (u._id === editingId ? { ...u, ...data } : u)));
                 toast.success('User updated');
             } else {
-                const { data } = await api.post('/admin/users', form);
+                const payload: any = { ...form };
+                if (form.role !== 'admin' && form.pin) payload.pin = form.pin;
+                else delete payload.pin;
+                const { data } = await api.post('/admin/users', payload);
                 setUsers((prev) => [data, ...prev]);
                 toast.success('User created');
             }
@@ -72,7 +77,7 @@ const UserManagement: React.FC = () => {
     };
 
     const handleEdit = (user: User) => {
-        setForm({ username: user.username, password: '', role: user.role });
+        setForm({ username: user.username, password: '', role: user.role, pin: user.pin || '' });
         setEditingId(user._id);
         setShowForm(true);
     };
@@ -102,7 +107,7 @@ const UserManagement: React.FC = () => {
         admin: 'badge-admin',
         waiter: 'badge-waiter',
         kitchen: 'badge-kitchen',
-        bar: 'badge-kitchen',
+        bar: 'badge-bar',
         cashier: 'badge-cashier',
     };
 
@@ -124,8 +129,8 @@ const UserManagement: React.FC = () => {
                         <h3 className="text-lg font-semibold text-surface-100 mb-4">
                             {editingId ? 'Edit User' : 'Create New User'}
                         </h3>
-                        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
+                        <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3">
+                            <div className="flex-1 min-w-[140px]">
                                 <label className="label">Username</label>
                                 <input
                                     className="input"
@@ -135,18 +140,37 @@ const UserManagement: React.FC = () => {
                                     placeholder="e.g. John"
                                 />
                             </div>
-                            <div>
-                                <label className="label">{editingId ? 'New Password (optional)' : 'Password'}</label>
-                                <input
-                                    className="input"
-                                    type="password"
-                                    value={form.password}
-                                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                    required={!editingId}
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                            <div>
+                            {form.role === 'admin' && (
+                                <div>
+                                    <label className="label">{editingId ? 'New Password (optional)' : 'Password'}</label>
+                                    <input
+                                        className="input"
+                                        type="password"
+                                        value={form.password}
+                                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                        required={!editingId}
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                            )}
+                            {form.role !== 'admin' && (
+                                <div className="w-28">
+                                    <label className="label">PIN</label>
+                                    <input
+                                        className="input font-mono tracking-[0.3em] text-center"
+                                        type="text"
+                                        inputMode="numeric"
+                                        maxLength={4}
+                                        value={form.pin}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                            setForm({ ...form, pin: val });
+                                        }}
+                                        placeholder="----"
+                                    />
+                                </div>
+                            )}
+                            <div className="w-36">
                                 <label className="label">Role</label>
                                 <select
                                     className="input"
@@ -160,8 +184,8 @@ const UserManagement: React.FC = () => {
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>
-                            <div className="sm:col-span-3">
-                                <button type="submit" className="btn-primary">
+                            <div>
+                                <button type="submit" className="btn-primary whitespace-nowrap">
                                     {editingId ? 'Update User' : 'Create User'}
                                 </button>
                             </div>
@@ -186,6 +210,7 @@ const UserManagement: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className={roleBadge[user.role] || 'badge'}>{user.role}</span>
+                                            {user.pin && <span className="text-xs font-mono text-surface-400">PIN: {user.pin}</span>}
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 pt-1 border-t border-surface-700/30">
@@ -220,6 +245,7 @@ const UserManagement: React.FC = () => {
                                     <tr className="border-b border-surface-700/50 text-surface-400">
                                         <th className="text-left p-4 font-medium">Username</th>
                                         <th className="text-left p-4 font-medium">Role</th>
+                                        <th className="text-center p-4 font-medium">PIN</th>
                                         <th className="text-center p-4 font-medium">Status</th>
                                         <th className="text-left p-4 font-medium">Created</th>
                                         <th className="text-right p-4 font-medium">Actions</th>
@@ -231,6 +257,9 @@ const UserManagement: React.FC = () => {
                                             <td className="p-4 font-medium text-surface-100">{user.username}</td>
                                             <td className="p-4">
                                                 <span className={roleBadge[user.role] || 'badge'}>{user.role}</span>
+                                            </td>
+                                            <td className="p-4 text-center font-mono text-surface-300">
+                                                {user.pin || <span className="text-surface-600">—</span>}
                                             </td>
                                             <td className="p-4 text-center">
                                                 <button

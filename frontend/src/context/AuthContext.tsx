@@ -12,6 +12,7 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     login: (username: string, password: string) => Promise<User>;
+    pinLogin: (pin: string) => Promise<User>;
     logout: () => void;
     isLoading: boolean;
 }
@@ -50,6 +51,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return data.user;
     }, []);
 
+    const pinLogin = useCallback(async (pin: string): Promise<User> => {
+        const { data } = await api.post('/auth/pin-login', { pin });
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setToken(data.token);
+        setUser(data.user);
+        return data.user;
+    }, []);
+
     const logout = useCallback(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -59,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, token, login, pinLogin, logout, isLoading }}>
             {children}
         </AuthContext.Provider>
     );

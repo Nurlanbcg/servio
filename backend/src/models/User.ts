@@ -7,7 +7,10 @@ export interface IUser extends Document {
     username: string;
     password: string;
     role: UserRole;
+    pin?: string;
     isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
     comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -28,6 +31,15 @@ const userSchema = new Schema<IUser>(
             type: String,
             enum: ['admin', 'waiter', 'kitchen', 'cashier', 'bar'],
             required: true,
+        },
+        pin: {
+            type: String,
+            sparse: true,
+            unique: true,
+            validate: {
+                validator: (v: string) => !v || /^\d{4}$/.test(v),
+                message: 'PIN must be exactly 4 digits.',
+            },
         },
         isActive: {
             type: Boolean,

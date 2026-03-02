@@ -46,6 +46,41 @@ router.post('/login', async (req: AuthRequest, res: Response): Promise<void> => 
     }
 });
 
+// POST /api/auth/pin-login
+router.post('/pin-login', async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { pin } = req.body;
+
+        if (!pin || !/^\d{4}$/.test(pin)) {
+            res.status(400).json({ message: 'A valid 4-digit PIN is required.' });
+            return;
+        }
+
+        const user = await User.findOne({ pin, isActive: true });
+        if (!user) {
+            res.status(401).json({ message: 'Invalid PIN.' });
+            return;
+        }
+
+        const token = jwt.sign(
+            { id: user._id, username: user.username, role: user.role },
+            process.env.JWT_SECRET || 'fallback-secret',
+            { expiresIn: '12h' }
+        );
+
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                role: user.role,
+            },
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error.' });
+    }
+});
+
 // GET /api/auth/me
 router.get('/me', authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
     try {

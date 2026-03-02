@@ -108,7 +108,14 @@ const LoginPage: React.FC = () => {
                     </form>
                 </div>
 
-                <p className="text-center text-surface-500 text-xs mt-6">
+                <button
+                    onClick={() => navigate('/login')}
+                    className="flex items-center justify-center gap-2 w-full mt-4 py-2 text-sm text-surface-500 hover:text-brand-400 transition-colors"
+                >
+                    ← Back to PIN Login
+                </button>
+
+                <p className="text-center text-surface-500 text-xs mt-4">
                     Servio — Ordering Management System
                 </p>
             </div>

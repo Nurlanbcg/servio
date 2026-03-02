@@ -27,10 +27,15 @@ router.get('/users', async (_req: AuthRequest, res: Response): Promise<void> => 
 // POST /api/admin/users
 router.post('/users', async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const { username, password, role } = req.body;
+        const { username, password, role, pin } = req.body;
 
-        if (!username || !password || !role) {
-            res.status(400).json({ message: 'Username, password, and role are required.' });
+        if (!username || !role) {
+            res.status(400).json({ message: 'Username and role are required.' });
+            return;
+        }
+
+        if (role === 'admin' && !password) {
+            res.status(400).json({ message: 'Password is required for admin users.' });
             return;
         }
 
@@ -40,14 +45,31 @@ router.post('/users', async (req: AuthRequest, res: Response): Promise<void> => 
             return;
         }
 
-        const user = new User({ username, password, role });
+        // Validate PIN if provided
+        if (pin) {
+            if (!/^\d{4}$/.test(pin)) {
+                res.status(400).json({ message: 'PIN must be exactly 4 digits.' });
+                return;
+            }
+            const existingPin = await User.findOne({ pin });
+            if (existingPin) {
+                res.status(409).json({ message: `PIN is already assigned to ${existingPin.username}.` });
+                return;
+            }
+        }
+
+        const userPassword = password || Math.random().toString(36).slice(-10) + 'A1!';
+        const user = new User({ username, password: userPassword, role, ...(pin ? { pin } : {}) });
         await user.save();
 
         res.status(201).json({
             id: user._id,
+            _id: user._id,
             username: user.username,
             role: user.role,
             isActive: user.isActive,
+            pin: user.pin || '',
+            createdAt: user.createdAt,
         });
     } catch (error) {
         res.status(500).json({ message: 'Server error.' });
@@ -57,7 +79,7 @@ router.post('/users', async (req: AuthRequest, res: Response): Promise<void> => 
 // PUT /api/admin/users/:id
 router.put('/users/:id', async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const { username, password, role, isActive } = req.body;
+        const { username, password, role, isActive, pin } = req.body;
         const user = await User.findById(req.params.id);
 
         if (!user) {
@@ -70,6 +92,26 @@ router.put('/users/:id', async (req: AuthRequest, res: Response): Promise<void> 
             return;
         }
 
+        // Handle PIN
+        if (pin !== undefined) {
+            if (pin === '' || pin === null) {
+                // Clear PIN
+                user.pin = undefined;
+            } else {
+                if (!/^\d{4}$/.test(pin)) {
+                    res.status(400).json({ message: 'PIN must be exactly 4 digits.' });
+                    return;
+                }
+                // Check uniqueness
+                const existingPin = await User.findOne({ pin, _id: { $ne: req.params.id } });
+                if (existingPin) {
+                    res.status(409).json({ message: `PIN is already assigned to ${existingPin.username}.` });
+                    return;
+                }
+                user.pin = pin;
+            }
+        }
+
         if (username) user.username = username;
         if (password) user.password = password;
         if (role) user.role = role;
@@ -78,9 +120,12 @@ router.put('/users/:id', async (req: AuthRequest, res: Response): Promise<void> 
         await user.save();
         res.json({
             id: user._id,
+            _id: user._id,
             username: user.username,
             role: user.role,
             isActive: user.isActive,
+            pin: user.pin || '',
+            createdAt: user.createdAt,
         });
     } catch (error) {
         res.status(500).json({ message: 'Server error.' });

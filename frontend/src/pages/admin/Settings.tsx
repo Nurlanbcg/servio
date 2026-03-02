@@ -238,6 +238,7 @@ const Settings: React.FC = () => {
             <div className="space-y-8">
                 <h2 className="text-xl font-bold text-surface-100">Settings</h2>
 
+
                 {/* ─── Halls Management ─── */}
                 <div className="card space-y-4">
                     <h3 className="text-lg font-semibold text-surface-100">Halls & Tables</h3>
