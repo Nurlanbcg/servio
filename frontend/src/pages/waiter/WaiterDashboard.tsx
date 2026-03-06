@@ -293,24 +293,26 @@ const WaiterDashboard: React.FC = () => {
 
             {/* ─── Order History for this table ─── */}
             {tableOrders.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-surface-700/50 space-y-3">
+                <div className="mt-4 pt-4 border-t border-surface-700/50 space-y-2">
                     <h3 className="text-sm font-semibold text-surface-400 flex items-center gap-1.5 uppercase tracking-wider">
                         <HiOutlineClipboardList className="w-4 h-4" />
                         Previous Orders
                     </h3>
-                    {tableOrders.map((order) => (
-                        <div key={order._id} className="bg-surface-800/60 rounded-xl p-3 space-y-1.5">
-                            <span className="text-xs text-surface-500">
-                                {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                            {order.items.map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between">
-                                    <span className="text-sm text-surface-300">{item.name}</span>
-                                    <span className="text-xs font-semibold text-surface-400">×{item.quantity}</span>
-                                </div>
-                            ))}
-                        </div>
-                    ))}
+                    <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                        {tableOrders.map((order) => (
+                            <div key={order._id} className="bg-surface-800/60 rounded-xl p-3 space-y-1.5">
+                                <span className="text-xs text-surface-500">
+                                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                {order.items.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between">
+                                        <span className="text-sm text-surface-300">{item.name}</span>
+                                        <span className="text-xs font-semibold text-surface-400">×{item.quantity}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
