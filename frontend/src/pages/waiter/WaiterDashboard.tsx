@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout';
 import api from '../../lib/api';
 import { getSocket } from '../../lib/socket';
@@ -23,7 +24,10 @@ interface Hall {
     type: 'hall' | 'cabinet';
 }
 
+const IDLE_TIMEOUT_MS = 5000; // 5 seconds
+
 const WaiterDashboard: React.FC = () => {
+    const { logout } = useAuth();
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [tableNumber, setTableNumber] = useState<string | null>(null);
@@ -35,6 +39,35 @@ const WaiterDashboard: React.FC = () => {
     const [cartOpen, setCartOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [busyTables, setBusyTables] = useState<Set<string>>(new Set());
+    const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Auto-logout after 5 seconds of inactivity on the table selection screen
+    const resetIdleTimer = useCallback(() => {
+        if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = setTimeout(() => {
+            logout();
+        }, IDLE_TIMEOUT_MS);
+    }, [logout]);
+
+    useEffect(() => {
+        // Only activate auto-logout on the table selection screen
+        if (tableNumber !== null) {
+            if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+            return;
+        }
+
+        // Start timer immediately
+        resetIdleTimer();
+
+        // Reset on any user interaction
+        const events = ['mousedown', 'mousemove', 'touchstart', 'keydown', 'scroll'];
+        events.forEach((e) => window.addEventListener(e, resetIdleTimer));
+
+        return () => {
+            if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+            events.forEach((e) => window.removeEventListener(e, resetIdleTimer));
+        };
+    }, [tableNumber, resetIdleTimer]);
 
     useEffect(() => {
         fetchMenu();
