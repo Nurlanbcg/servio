@@ -49,15 +49,19 @@ const WaiterDashboard: React.FC = () => {
                 return next;
             });
         });
-        return () => { socket.off('table-freed'); };
+        socket.on('table-busy', (data: { tableNumber: string }) => {
+            setBusyTables((prev) => new Set(prev).add(String(data.tableNumber)));
+        });
+        return () => {
+            socket.off('table-freed');
+            socket.off('table-busy');
+        };
     }, []);
 
     const fetchBusyTables = async () => {
         try {
-            const { data } = await api.get('/waiter/orders');
-            const confirmed = data.filter((o: any) => o.status === 'confirmed');
-            const busy = new Set<string>(confirmed.map((o: any) => o.tableNumber));
-            setBusyTables(busy);
+            const { data } = await api.get('/waiter/busy-tables');
+            setBusyTables(new Set<string>(data.map(String)));
         } catch {
             // ignore
         }

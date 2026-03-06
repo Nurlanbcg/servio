@@ -212,6 +212,9 @@ router.post('/orders', async (req: AuthRequest, res: Response): Promise<void> =>
             createdAt: (order as any).createdAt,
         });
 
+        // Notify all waiters that this table is now busy
+        io.to('waiter').emit('table-busy', { tableNumber: order.tableNumber });
+
         // Return to waiter (no prices)
         res.status(201).json({
             _id: order._id,
@@ -221,6 +224,17 @@ router.post('/orders', async (req: AuthRequest, res: Response): Promise<void> =>
         });
     } catch (error) {
         console.error('Order creation error:', error);
+        res.status(500).json({ message: 'Server error.' });
+    }
+});
+
+// GET /api/waiter/busy-tables — all confirmed (unpaid) table numbers across all waiters
+router.get('/busy-tables', async (_req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const orders = await Order.find({ status: 'confirmed' }).select('tableNumber');
+        const tables = [...new Set(orders.map((o) => o.tableNumber))];
+        res.json(tables);
+    } catch (error) {
         res.status(500).json({ message: 'Server error.' });
     }
 });
