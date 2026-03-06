@@ -4,7 +4,7 @@ import Layout from '../../components/Layout';
 import api from '../../lib/api';
 import { getSocket } from '../../lib/socket';
 import toast from 'react-hot-toast';
-import { HiOutlinePlus, HiOutlineMinus, HiOutlineShoppingCart, HiOutlineCheck, HiOutlineArrowLeft, HiOutlineX, HiOutlineViewGrid, HiOutlineViewList } from 'react-icons/hi';
+import { HiOutlinePlus, HiOutlineMinus, HiOutlineShoppingCart, HiOutlineCheck, HiOutlineArrowLeft, HiOutlineX, HiOutlineViewGrid, HiOutlineViewList, HiOutlineClipboardList } from 'react-icons/hi';
 
 interface MenuItem {
     _id: string;
@@ -16,6 +16,12 @@ interface CartItem {
     menuItemId: string;
     name: string;
     quantity: number;
+}
+
+interface TableOrder {
+    _id: string;
+    items: { name: string; quantity: number }[];
+    createdAt: string;
 }
 
 interface Hall {
@@ -39,6 +45,7 @@ const WaiterDashboard: React.FC = () => {
     const [cartOpen, setCartOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [busyTables, setBusyTables] = useState<Set<string>>(new Set());
+    const [tableOrders, setTableOrders] = useState<TableOrder[]>([]);
     const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Auto-logout after 5 seconds of inactivity on the table selection screen
@@ -68,6 +75,24 @@ const WaiterDashboard: React.FC = () => {
             events.forEach((e) => window.removeEventListener(e, resetIdleTimer));
         };
     }, [tableNumber, resetIdleTimer]);
+
+    // Fetch existing orders whenever a table is selected
+    const fetchTableOrders = async (table: string) => {
+        try {
+            const { data } = await api.get(`/waiter/table-orders/${encodeURIComponent(table)}`);
+            setTableOrders(data);
+        } catch {
+            setTableOrders([]);
+        }
+    };
+
+    useEffect(() => {
+        if (tableNumber) {
+            fetchTableOrders(tableNumber);
+        } else {
+            setTableOrders([]);
+        }
+    }, [tableNumber]);
 
     useEffect(() => {
         fetchMenu();
@@ -265,6 +290,29 @@ const WaiterDashboard: React.FC = () => {
                     </>
                 )}
             </button>
+
+            {/* ─── Order History for this table ─── */}
+            {tableOrders.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-surface-700/50 space-y-3">
+                    <h3 className="text-sm font-semibold text-surface-400 flex items-center gap-1.5 uppercase tracking-wider">
+                        <HiOutlineClipboardList className="w-4 h-4" />
+                        Previous Orders
+                    </h3>
+                    {tableOrders.map((order) => (
+                        <div key={order._id} className="bg-surface-800/60 rounded-xl p-3 space-y-1.5">
+                            <span className="text-xs text-surface-500">
+                                {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {order.items.map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between">
+                                    <span className="text-sm text-surface-300">{item.name}</span>
+                                    <span className="text-xs font-semibold text-surface-400">×{item.quantity}</span>
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 

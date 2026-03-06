@@ -239,6 +239,21 @@ router.get('/busy-tables', async (_req: AuthRequest, res: Response): Promise<voi
     }
 });
 
+// GET /api/waiter/table-orders/:tableNumber — confirmed orders for a specific table (no prices)
+router.get('/table-orders/:tableNumber', async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const orders = await Order.find({
+            tableNumber: req.params.tableNumber,
+            status: 'confirmed',
+        })
+            .select('items.name items.quantity createdAt')
+            .sort({ createdAt: -1 });
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error.' });
+    }
+});
+
 // GET /api/waiter/orders — own orders, no prices
 router.get('/orders', async (req: AuthRequest, res: Response): Promise<void> => {
     try {
