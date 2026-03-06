@@ -298,7 +298,7 @@ const WaiterDashboard: React.FC = () => {
                         <HiOutlineClipboardList className="w-4 h-4" />
                         Previous Orders
                     </h3>
-                    <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                    <div className="max-h-80 overflow-y-auto space-y-2 pr-1">
                         {tableOrders.map((order) => (
                             <div key={order._id} className="bg-surface-800/60 rounded-xl p-3 space-y-1.5">
                                 <span className="text-xs text-surface-500">
