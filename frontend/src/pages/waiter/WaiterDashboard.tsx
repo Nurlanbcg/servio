@@ -44,8 +44,9 @@ const WaiterDashboard: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState<string>('All');
     const [cartOpen, setCartOpen] = useState(false);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [busyTables, setBusyTables] = useState<Set<string>>(new Set());
+    const [busyTables, setBusyTables] = useState<Map<string, string>>(new Map());
     const [tableOrders, setTableOrders] = useState<TableOrder[]>([]);
+    const [, setTick] = useState(0);
     const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Auto-logout after 5 seconds of inactivity on the table selection screen
@@ -94,6 +95,12 @@ const WaiterDashboard: React.FC = () => {
         }
     }, [tableNumber]);
 
+    // Tick every second to update elapsed timers
+    useEffect(() => {
+        const interval = setInterval(() => setTick((t) => t + 1), 1000);
+        return () => clearInterval(interval);
+    }, []);
+
     useEffect(() => {
         fetchMenu();
         fetchSettings();
@@ -102,13 +109,13 @@ const WaiterDashboard: React.FC = () => {
         const socket = getSocket();
         socket.on('table-freed', (data: { tableNumber: string }) => {
             setBusyTables((prev) => {
-                const next = new Set(prev);
+                const next = new Map(prev);
                 next.delete(String(data.tableNumber));
                 return next;
             });
         });
-        socket.on('table-busy', (data: { tableNumber: string }) => {
-            setBusyTables((prev) => new Set(prev).add(String(data.tableNumber)));
+        socket.on('table-busy', (data: { tableNumber: string; latestOrderAt: string }) => {
+            setBusyTables((prev) => new Map(prev).set(String(data.tableNumber), data.latestOrderAt));
         });
         return () => {
             socket.off('table-freed');
@@ -119,10 +126,21 @@ const WaiterDashboard: React.FC = () => {
     const fetchBusyTables = async () => {
         try {
             const { data } = await api.get('/waiter/busy-tables');
-            setBusyTables(new Set<string>(data.map(String)));
+            const map = new Map<string, string>();
+            for (const entry of data) {
+                map.set(String(entry.tableNumber), entry.latestOrderAt);
+            }
+            setBusyTables(map);
         } catch {
             // ignore
         }
+    };
+
+    const formatElapsed = (isoDate: string): string => {
+        const seconds = Math.max(0, Math.floor((Date.now() - new Date(isoDate).getTime()) / 1000));
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${String(s).padStart(2, '0')}`;
     };
 
     const fetchSettings = async () => {
@@ -302,7 +320,7 @@ const WaiterDashboard: React.FC = () => {
                         {tableOrders.map((order) => (
                             <div key={order._id} className="bg-surface-800/60 rounded-xl p-3 space-y-1.5">
                                 <span className="text-xs text-surface-500">
-                                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                                 </span>
                                 {order.items.map((item, idx) => (
                                     <div key={idx} className="flex items-center justify-between">
@@ -359,19 +377,23 @@ const WaiterDashboard: React.FC = () => {
                     {currentHall && currentHall.type !== 'cabinet' && (
                         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-3">
                             {currentTables.map((t) => {
-                                const isBusy = busyTables.has(String(t));
+                                const busyAt = busyTables.get(String(t));
+                                const isBusy = !!busyAt;
                                 return (
                                     <button
                                         key={t}
                                         onClick={() => setTableNumber(String(t))}
-                                        className={`aspect-square rounded-2xl text-xl font-bold transition-all active:scale-95 relative ${isBusy
+                                        className={`aspect-square rounded-2xl text-xl font-bold transition-all active:scale-95 relative flex flex-col items-center justify-center ${isBusy
                                             ? 'bg-red-500/15 border-2 border-red-500/50 text-red-400 hover:bg-red-500/25 hover:border-red-500/70 shadow-lg shadow-red-500/10'
                                             : 'bg-surface-800 border border-surface-700/50 text-surface-300 hover:bg-brand-500 hover:text-white hover:border-brand-500 hover:shadow-lg hover:shadow-brand-500/20 hover:scale-105'
                                             }`}
                                     >
                                         {t}
                                         {isBusy && (
-                                            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                                            <>
+                                                <span className="text-xs font-semibold text-red-400 mt-1">{formatElapsed(busyAt)}</span>
+                                                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                                            </>
                                         )}
                                     </button>
                                 );
@@ -385,7 +407,8 @@ const WaiterDashboard: React.FC = () => {
                             <h3 className="text-sm font-semibold text-surface-400 text-center uppercase tracking-wider">Cabinets</h3>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                                 {halls.filter((h) => h.type === 'cabinet').map((cab) => {
-                                    const isBusy = busyTables.has(cab.name);
+                                    const busyAt = busyTables.get(cab.name);
+                                    const isBusy = !!busyAt;
                                     return (
                                         <button
                                             key={cab.name}
@@ -395,7 +418,12 @@ const WaiterDashboard: React.FC = () => {
                                                 : 'bg-purple-500/10 border border-purple-500/30 text-purple-300 hover:bg-purple-500 hover:text-white hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 hover:scale-105'
                                                 }`}
                                         >
-                                            🚪 {cab.name}
+                                            <span className="flex items-center gap-2">
+                                                🚪 {cab.name}
+                                                {isBusy && (
+                                                    <span className="text-xs font-medium text-red-400/80">{formatElapsed(busyAt)}</span>
+                                                )}
+                                            </span>
                                             {isBusy && (
                                                 <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
                                             )}

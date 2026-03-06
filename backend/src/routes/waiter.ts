@@ -213,7 +213,10 @@ router.post('/orders', async (req: AuthRequest, res: Response): Promise<void> =>
         });
 
         // Notify all waiters that this table is now busy
-        io.to('waiter').emit('table-busy', { tableNumber: order.tableNumber });
+        io.to('waiter').emit('table-busy', {
+            tableNumber: order.tableNumber,
+            latestOrderAt: (order as any).createdAt?.toISOString() || new Date().toISOString(),
+        });
 
         // Return to waiter (no prices)
         res.status(201).json({
@@ -228,12 +231,24 @@ router.post('/orders', async (req: AuthRequest, res: Response): Promise<void> =>
     }
 });
 
-// GET /api/waiter/busy-tables — all confirmed (unpaid) table numbers across all waiters
+// GET /api/waiter/busy-tables — all confirmed (unpaid) tables with latest order time
 router.get('/busy-tables', async (_req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const orders = await Order.find({ status: 'confirmed' }).select('tableNumber');
-        const tables = [...new Set(orders.map((o) => o.tableNumber))];
-        res.json(tables);
+        const orders = await Order.find({ status: 'confirmed' })
+            .select('tableNumber createdAt')
+            .sort({ createdAt: -1 });
+        const tableMap: Record<string, string> = {};
+        for (const o of orders) {
+            const t = o.tableNumber;
+            if (!tableMap[t]) {
+                tableMap[t] = (o as any).createdAt.toISOString();
+            }
+        }
+        const result = Object.entries(tableMap).map(([tableNumber, latestOrderAt]) => ({
+            tableNumber,
+            latestOrderAt,
+        }));
+        res.json(result);
     } catch (error) {
         res.status(500).json({ message: 'Server error.' });
     }
